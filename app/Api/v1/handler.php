@@ -8,8 +8,9 @@ use alsvanzelf\jsonapi\ErrorsDocument;
 use alsvanzelf\jsonapi\ResourceDocument;
 use alsvanzelf\jsonapi\CollectionDocument;
 use alsvanzelf\jsonapi\objects\ResourceObject;
-use App\Core\Dash as Dash;
-use \App\Core\MySQL as MySQL;
+use \App\{Core as Dash, Config};
+use \App\Api\RestApi as Api;
+use \App\DB\MySQL;
 
 // route requests based on method
 switch (strtolower($_SERVER['REQUEST_METHOD'])) {
@@ -38,11 +39,12 @@ switch (strtolower($_SERVER['REQUEST_METHOD'])) {
         break;
 }
 
-function fetch(\Wildfire\Api $api, array $url_parts, array $all_types): void
+function fetch(Api $api, array $url_parts, array $all_types): void
 {
     try {
         $dash = new Dash;
         $sql = new MySQL;
+        $config = new Config();
         $check_use_id = false;  // default value will be overriden if required
 
         if (is_numeric($url_parts[0])) {    // if request has only numeric id
@@ -145,9 +147,9 @@ function fetch(\Wildfire\Api $api, array $url_parts, array $all_types): void
     }
 }
 
-function create(\Wildfire\Api $api, array $url_parts, array $all_types): void
+function create(Api $api, array $url_parts, array $all_types): void
 {
-    $dash = new Wildfire\Core\Dash;
+    $dash = new Dash;
 
     $type = $url_parts[0] ?? null;
 
@@ -173,9 +175,9 @@ function create(\Wildfire\Api $api, array $url_parts, array $all_types): void
     $api->json($res)->send();
 }
 
-function update(\Wildfire\Api $api, array $url_parts, array $all_types): void
+function update(Api $api, array $url_parts, array $all_types): void
 {
-    $dash = new \Wildfire\Core\Dash;
+    $dash = new Dash;
 
     if (!is_numeric($url_parts[0]) && !$url_parts[1]) {
         $api->json(['error' => 'slug not mentioned'])->send(400);
@@ -217,9 +219,9 @@ function update(\Wildfire\Api $api, array $url_parts, array $all_types): void
     $api->json($res)->send();
 }
 
-function delete(\Wildfire\Api $api, array $url_parts, array $all_types): void
+function delete(Api $api, array $url_parts, array $all_types): void
 {
-    $dash = new Wildfire\Core\Dash;
+    $dash = new Dash;
 
     if (is_numeric($url_parts[0])) {
         $id = (int)$url_parts[0];
@@ -257,13 +259,13 @@ function delete(\Wildfire\Api $api, array $url_parts, array $all_types): void
     $api->json(['success' => 'true'])->send();
 }
 
-function upload(\Wildfire\Api $api): void
+function upload(Api $api): void
 {
     if (!$_FILES) {
         $api->json(['error' => 'no files uploaded'])->send(403);
     }
 
-    $dash = new \Wildfire\Core\Dash;
+    $dash = new Dash;
     $uploads_dir = $dash->get_upload_dir_path();
     $uploads_base_url = $dash->get_upload_dir_url();
 
@@ -307,7 +309,7 @@ function upload(\Wildfire\Api $api): void
         }
 
         move_uploaded_file($tmp_name, $loc);
-        $tribe_root = TRIBE_ROOT;
+        $tribe_root = APP_ROOT;
         $upload_path = preg_replace("/.*(?=\/uploads)/", "", $loc);
 
         $res[] = [

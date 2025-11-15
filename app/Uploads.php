@@ -1,5 +1,5 @@
 <?php
-namespace Tribe;
+namespace App;
 
 class Uploads {
 

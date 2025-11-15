@@ -1,13 +1,16 @@
 <?php
-namespace Tribe;
-set_time_limit(600);
+namespace App;
 
-use \Tribe\Core as Core;
 use \Ifsnop\Mysqldump as IMysqldump;
 
 class Backup {
+	public function __construct()
+    {
+        set_time_limit(600);
+    }
+
 	public function mysqlDatabase() {
-		$core = new Core;
+		$core = new Core();
 
 		$upload_paths = $this->get_backup_path();
 		$backupfile = $upload_paths['upload_dir'] . '/backup-' . uniqid() . '-' . time() . '-' . $_ENV['DB_NAME'] . '.sql';
@@ -30,7 +33,7 @@ class Backup {
 	}
 
 	public function uploadsFolder() {
-		$core = new Core;
+		$core = new Core();
 
 		if (($_ENV['S3_BKUP_ACCESS_KEY'] ?? false) && ($_ENV['S3_BKUP_BUCKET_NAME'] ?? false) && ($_ENV['S3_BKUP_HOST_BUCKET'] ?? false) && ($_ENV['S3_BKUP_SECRET_KEY'] ?? false) && ($_ENV['S3_BKUP_HOST_BASE'] ?? false) && defined('ABSOLUTE_PATH') && ($_ENV['DB_NAME'] ?? false) && ($_ENV['DB_USER'] ?? false) && ($_ENV['DB_PASS'] ?? false)) {
 
@@ -66,11 +69,11 @@ class Backup {
 
 	function get_backup_path() {
 		$folder_path = 'uploads/mysql-backups/' . date('Y') . '/' . date('m-F') . '/' . date('d-D');
-		if (!is_dir(TRIBE_ROOT . '/' . $folder_path)) {
-			mkdir(TRIBE_ROOT . '/' . $folder_path, 0755, true);
+		if (!is_dir(APP_ROOT . '/' . $folder_path)) {
+			mkdir(APP_ROOT . '/' . $folder_path, 0755, true);
 		}
 
-		return array('upload_dir' => TRIBE_ROOT . '/' . $folder_path, 'upload_url' => BASE_URL . '/' . $folder_path);
+		return array('upload_dir' => APP_ROOT . '/' . $folder_path, 'upload_url' => BASE_URL . '/' . $folder_path);
 	}
 }
 ?>

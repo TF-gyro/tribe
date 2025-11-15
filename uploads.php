@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/_init.php';
-$uploads = new \Tribe\Uploads;
-$api = new \Tribe\API;
+$uploads = new \App\Uploads;
+$api = new \App\Api\RestApi;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST')
 	$_POST = $api->requestBody;

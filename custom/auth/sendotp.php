@@ -4,8 +4,9 @@ require __DIR__ . '/../../_init.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+use \App\Api\RestApi;
 
-$api = new \Tribe\API;
+$api = new RestApi();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST')
   $_POST = $api->requestBody;

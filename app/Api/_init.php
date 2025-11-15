@@ -1,13 +1,18 @@
 <?php
-$sql = new \Wildfire\Core\MySQL();
-$dash = new \Wildfire\Core\Dash();
-$admin = new \Wildfire\Core\Admin();
-$auth = new \Wildfire\Auth();
-$api = new \Wildfire\Api();
+use \App\DB\MySQL;
+use \App\{Core, Auth, Config};
+use \App\Api\RestApi as Api;
+
+$sql = new MySQL();
+$dash = new Core();
+$config = new Config();
+$auth = new Auth();
+$api = new Api();
+$core = $dash;
 
 $type = 'api';
-$types = $dash->getTypes();
-$menus = $dash->getMenus();
+$types = $config->getTypes();
+$menus = $config->getMenus();
 
 $thisUriArray = explode('/', $_SERVER['REQUEST_URI']);
 $api_version = $thisUriArray[2];
@@ -28,5 +33,5 @@ if (
 ) {
     include_once __DIR__ . "/$api_version/auth.php";
 } else { //Access denied
-    $api->sendResponse(401);
+    $api->send(401);
 }

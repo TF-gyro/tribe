@@ -1,12 +1,13 @@
 <?php
-namespace App;
+namespace App\Api;
 
 use \alsvanzelf\jsonapi\CollectionDocument;
 use \alsvanzelf\jsonapi\ResourceDocument;
 use \alsvanzelf\jsonapi\MetaDocument;
 use \App\DB\MySQL;
+use \App\{Core, Config, Auth};
 
-class REST {
+class RestApi {
     private $response;
     private $request;
     public $requestBody;
@@ -843,7 +844,7 @@ class REST {
     /**
      * encodes passed data as a json that can be sent over network
      */
-    public function json($data): REST
+    public function json($data): RestApi
     {
         $encodeOptions =  JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PARTIAL_OUTPUT_ON_ERROR;
         $this->response = json_encode($data, $encodeOptions);

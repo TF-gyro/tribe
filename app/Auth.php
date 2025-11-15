@@ -145,7 +145,7 @@ class Auth
         $token = str_replace('Bearer ', '', $token);
 
         try {
-            $_jwt_secret = ($_ENV['TRIBE_API_SECRET_KEY'] ?? $_ENV['DB_PASS']).($_SESSION['user_id'] ?? '');
+            $_jwt_secret = ($_ENV['API_SECRET'] ?? $_ENV['DB_PASS']).($_SESSION['user_id'] ?? '');
             $decoded = (array) JWT::decode($token, $_jwt_secret);
 
             if (isset($_SESSION['user_id'])) {
@@ -186,7 +186,7 @@ class Auth
         $payload = array_merge($_user, $payload);
         unset($_user);
 
-        $jwt_secret = ($_ENV['TRIBE_API_SECRET_KEY'] ?? $_ENV['DB_PASS']).$user['user_id'];
+        $jwt_secret = ($_ENV['API_SECRET'] ?? $_ENV['DB_PASS']).$user['user_id'];
         $jwt_token = JWT::encode($payload, $jwt_secret, 'HS256');
 
         $_SESSION = $user;

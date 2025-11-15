@@ -1,9 +1,7 @@
 <?php
-namespace Tribe;
+namespace App;
 
-use \Tribe\Core;
-use \Tribe\Config;
-use \Tribe\MySQL;
+use \App\DB\MySQL;
 use \Firebase\JWT\JWT;
 
 class Auth
@@ -84,7 +82,7 @@ class Auth
 
         if ($do_not_redirect !== true)
             header($_redirect);
-        
+
         ob_end_flush();
     }
 
@@ -148,7 +146,7 @@ class Auth
 
         try {
             $_jwt_secret = ($_ENV['TRIBE_API_SECRET_KEY'] ?? $_ENV['DB_PASS']).($_SESSION['user_id'] ?? '');
-            $decoded = (array) JWT::decode($token, $_jwt_secret, ['HS256']);
+            $decoded = (array) JWT::decode($token, $_jwt_secret);
 
             if (isset($_SESSION['user_id'])) {
                 return ($_SESSION['user_id'] == $decoded['user_id']) ? $_SESSION : false;
@@ -189,7 +187,7 @@ class Auth
         unset($_user);
 
         $jwt_secret = ($_ENV['TRIBE_API_SECRET_KEY'] ?? $_ENV['DB_PASS']).$user['user_id'];
-        $jwt_token = JWT::encode($payload, $jwt_secret);
+        $jwt_token = JWT::encode($payload, $jwt_secret, 'HS256');
 
         $_SESSION = $user;
 

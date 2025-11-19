@@ -5,6 +5,7 @@
 /node_modules
 /vendor
 /composer.phar
+/logs/*
 *.code-workspace
 sftp-config.json
 .DS_Store

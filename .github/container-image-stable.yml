@@ -1,0 +1,136 @@
+name: Stable Build
+
+# Configures this workflow to run every time a tag is pushed to the repo.
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Defines two custom environment variables for the workflow.
+# These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: "tf-gyro/tribe"
+
+# There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-24.04
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Uses the `docker/login-action` action to log in to the Container registry registry,
+      # using the account and password that will publish the packages.
+      # Once published, the packages are scoped to the account defined here.
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine final image tags
+        id: vars
+        run: |
+          RAW_TAG="${GITHUB_REF_NAME#v}"  # remove leading 'v' (v1.2.9 → 1.2.9)
+
+          git fetch origin +refs/heads/*:refs/remotes/origin/*
+
+          BRANCH=$(git for-each-ref --format='%(refname:short)' \
+            --contains $GITHUB_SHA \
+            refs/remotes/origin/* | head -1)
+
+          # strip "origin/"
+          BRANCH=${BRANCH#origin/}
+
+          # Fallback: use event context if branch detection failed
+          if [ -z "$BRANCH" ]; then
+            BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF_NAME}}"
+          fi
+
+          echo "Detected branch: $BRANCH"
+
+          if [ "$BRANCH" = "master" ]; then
+            IMAGE_TAG="${RAW_TAG}"
+            LATEST_TAG="latest"
+          else
+            echo "Skipping build: tag is not from master branch."
+            echo "SKIP_BUILD=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          echo "SKIP_BUILD=false" >> $GITHUB_ENV
+
+
+      - name: Stop if build is skipped
+        if: env.SKIP_BUILD == 'true'
+        run: echo "Build skipped for unsupported branch."
+
+      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) to extract tags and labels
+      # that will be applied to the specified image. The `id` "meta" allows the output of this step to be referenced in a subsequent step.
+      # The `images` value provides the base name for the tags and labels.
+      - name: Extract metadata (tags, labels) for Docker
+        if: env.SKIP_BUILD == 'false'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Cache Docker layers
+        if: env.SKIP_BUILD == 'false'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`.
+      # If the build succeeds, it pushes the image to GitHub Packages.
+      # It uses the `context` parameter to define the build's context as the set of files located in the specified path.
+      # For more information, see [Usage](https://github.com/docker/build-push-action#usage) in the README of the `docker/build-push-action` repository.
+      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
+      - name: Build and push Docker image (amd64 only, cached)
+        if: env.SKIP_BUILD == 'false'
+        id: push
+        uses: docker/build-push-action@v5
+        with:
+          platforms: linux/amd64
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.LATEST_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move new cache to current cache location
+        if: env.SKIP_BUILD == 'false'
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built.
+      # It increases supply chain security for people who consume the image. For more information,
+      # see [Using artifact attestations to establish provenance for builds](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds).
+      - name: Generate artifact attestation
+        if: env.SKIP_BUILD == 'false'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

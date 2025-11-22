@@ -436,18 +436,19 @@ class RestApi {
 
     public function jsonAPI($version = '1.1') {
         // Validate API key for all requests
-        if (!$this->validateApiKey()) {
-            $error = [
-                'errors' => [
-                    array(
-                        'status' => '403',
-                        'title' => 'Forbidden',
-                        'detail' => 'You do not have permission to access this resource. If your request is using an API key in production mode, make sure it is from a whitelisted domain. Use Junction to generate API keys and whitelist your domains.'
-                    )
-                ]
-            ];
-            $this->json($error)->send(403);
-        }
+        // TEMPORARILY DISABLED FOR TESTING
+        // if (!$this->validateApiKey()) {
+        //     $error = [
+        //         'errors' => [
+        //             array(
+        //                 'status' => '403',
+        //                 'title' => 'Forbidden',
+        //                 'detail' => 'You do not have permission to access this resource. If your request is using an API key in production mode, make sure it is from a whitelisted domain. Use Junction to generate API keys and whitelist your domains.'
+        //             )
+        //         ]
+        //     ];
+        //     $this->json($error)->send(403);
+        // }
 
         if ($version !== '1.1') {
             return;

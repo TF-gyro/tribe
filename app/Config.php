@@ -97,7 +97,7 @@ class Config {
 			$types_json = \json_decode(\file_get_contents($json_path), true);
 		}
 
-		$types_json_junction = \json_decode(\file_get_contents('https://raw.githubusercontent.com/tribe-framework/types.json/master/junction.json'), true);
+		$types_json_junction = \json_decode(\file_get_contents('https://raw.githubusercontent.com/tf-gyro/types.json/master/junction.json'), true);
 
 		if (!$types_json) {
 			die("<em><b>Error:</b> types</em> validation failed");
